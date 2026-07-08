@@ -104,6 +104,7 @@ def draw_ticker(frame, text, x_offset):
     return text_w
 
 # === MAIN LOOP ===
+
 cap = cv2.VideoCapture(0)
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
@@ -113,9 +114,14 @@ cv2.namedWindow("Hand Tracking", cv2.WND_PROP_FULLSCREEN)
 cv2.setWindowProperty("Hand Tracking", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 last_state   = None
-ticker_text  = "...  PAMERAN SMKN 2 MANOKWARI  ...  TEKNIK ELEKTRONIKA  ... KEPALKAN TANGAN UNTUK MENYALAKAN LAMPU ...   "
+ticker_text  = "...  PERKENALAN SMKN 2 MANOKWARI  ...  TEKNIK ELEKTRONIKA KOMPUTER  ... KEPALKAN TANGAN UNTUK MENYALAKAN LAMPU ...   "
 ticker_x     = None
 ticker_speed = 3
+
+# === STATE MANAGEMENT SEDERHANA ===
+# 0 = LOW (tidak ada tangan atau tangan terbuka)
+# 1 = ACTIVE (kepal terdeteksi)
+indicator_state = 0  # 0: LOW, 1: ACTIVE/Fist
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -133,22 +139,56 @@ while cap.isOpened():
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
     results  = landmarker.detect(mp_image)
 
-    # === LOCK STATE: hanya update kalau tangan terdeteksi ===
-    if results.hand_landmarks:
-        fist_detected = False
+    # === DETEKSI TANGAN DAN KEPAL ===
+    fist_detected = False
 
+    if results.hand_landmarks:
         for hand_landmark_list in results.hand_landmarks:
             draw_landmarks(frame, hand_landmark_list)
             if is_fist(hand_landmark_list):
                 fist_detected = True
 
+        # === UPDATE STATE BERDASARKAN DETEKSI ===
+        if fist_detected:
+            # Jika kepal, set state ke 1 (ACTIVE)
+            indicator_state = 1
+        else:
+            # Jika tangan terbuka atau tidak ada kepal, set state ke 0 (LOW)
+            indicator_state = 0
+        
+        # === KIRIM KE ARDUINO ===
         current_state = '1' if fist_detected else '0'
         if current_state != last_state:
             if arduino:
                 arduino.write(current_state.encode())
             last_state = current_state
+    else:
+        # === TANGAN HILANG: STATE TETAP BERTAHAN ===
+        # indicator_state tetap seperti sebelumnya (tidak berubah)
+        pass
 
-    # Kalau tidak ada tangan -> state tidak berubah
+    # === GAMBAR INDIKATOR BERDASARKAN STATE ===
+    if indicator_state == 1:
+        # ACTIVE - Kepal terdeteksi (HIJAU)
+        cv2.rectangle(frame, (0, 0), (100, 50), (0, 255, 0), -1)
+        cv2.putText(frame, "ACTIVE", (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+
+    else:
+        # LOW - Tidak ada tangan atau tangan terbuka (MERAH)
+        cv2.rectangle(frame, (0, 0), (100, 50), (0, 0, 255), -1)
+        cv2.putText(frame, "LOW", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
+
+
+    # === TAMPILKAN STATE DI SAMPING ===
+    # Info state untuk debugging
+    state_text = f"State: {indicator_state}"
+    cv2.putText(frame, state_text, (w - 150, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+    
+    # Info tangan terdeteksi
+    if results.hand_landmarks:
+        cv2.putText(frame, f"Hands: {len(results.hand_landmarks)}", (w - 150, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    else:
+        cv2.putText(frame, "No Hand", (w - 150, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
     # === DRAW TICKER ===
     text_w = draw_ticker(frame, ticker_text, ticker_x)
