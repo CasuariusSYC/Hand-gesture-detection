@@ -18,11 +18,13 @@ Kemudain untuk file model nya saya menggunakan model yang sudah di sediakan oleh
 
 
 ### mediapipe
-
+MediaPipe adalah kerangka kerja open-source dari Google yang memungkinkan aplikasi untuk memproses data sensorik (seperti video atau audio) dan menjalankan inferensi machine learning secara real-time. Sangat populer untuk visi komputer, kerangka kerja ini banyak digunakan untuk fitur pelacakan gerak tubuh, wajah, dan objek langsung di perangkat
 ---
+
 ### opencv-python
-
+OpenCV-Python adalah pustaka pemrograman sumber terbuka yang digunakan untuk memproses gambar dan video secara real-time. Pustaka ini memadukan kekuatan bahasa pemrograman Python dengan ribuan algoritma visi komputer dan kecerdasan buatan, memungkinkan program untuk "melihat" dan menganalisis lingkungan visual
 ---
-### pyserial
 
+### pyserial
+PySerial adalah pustaka (library) Python yang digunakan untuk mengontrol komunikasi port serial (seperti RS-232). Pustaka lintas platform ini memungkinkan Anda menghubungkan skrip Python dengan perangkat keras eksternal seperti mikrokontroler (Arduino, Raspberry Pi), sensor, dan perangkat IoT untuk membaca dan mengirim data dengan mudah
 ---
